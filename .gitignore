@@ -1,4 +1,4 @@
 !.gitkeep
 .DS_Store
+.git/
 plugins/*
-themes/
