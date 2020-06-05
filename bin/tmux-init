@@ -5,7 +5,7 @@ set -o pipefail
 
 cd "$(dirname "$0")/.." || exit 1
 
-plugins="$(rg '^set -g @plugin' < entry.conf)"
+plugins="$(rg '^set -g @plugin' < tmux.conf)"
 uris="$(echo "$plugins" | sd 'set -g @plugin "([^"]+)"' '$1' | xargs -l printf 'https://github.com/%s\n')"
 
 
