@@ -26,7 +26,9 @@ git_update() {
     git clone --depth=1 "$uri"
   fi
 }
-export -f git_update
 
 
-echo "$repos" | xargs -l bash -c 'git_update "$@"' _
+echo "$repos" | while read repo
+do
+  git_update "$repo"
+done
