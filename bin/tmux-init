@@ -6,9 +6,26 @@ set -o pipefail
 cd "$(dirname "$0")/.." || exit 1
 
 plugins="$(rg '^set -g @plugin' < tmux.conf)"
-uris="$(echo "$plugins" | sd 'set -g @plugin "([^"]+)"' '$1' | xargs -l printf 'https://github.com/%s\n')"
+repos="$(echo "$plugins" | sd 'set -g @plugin "([^"]+)"' '$1')"
 
 
 cd 'plugins' || exit 1
 
-echo "$uris" | xargs -l git clone --depth=1
+
+git_update() {
+  local repo="$1"
+  if [[ -d "$repo" ]]
+  then
+    (
+      cd "$repo"
+      git pull
+    )
+  else
+    local uri="$(printf 'https://github.com/%s\n' "$repo")"
+    git clone --depth=1 "$uri"
+  fi
+}
+export -f git_update
+
+
+echo "$repos" | xargs -l bash -c 'git_update "$@"' _
