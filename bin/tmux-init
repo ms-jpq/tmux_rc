@@ -14,14 +14,15 @@ cd 'plugins' || exit 1
 
 git_update() {
   local repo="$1"
-  if [[ -d "$repo" ]]
+  local dest="$(echo "$repo" | sd '[^/]+/' '')"
+  if [[ -d "$dest" ]]
   then
     (
-      cd "$repo"
-      git pull
+      cd "$dest"
+      git pull --no-rebase
     )
   else
-    local uri="$(printf 'https://github.com/%s\n' "$repo")"
+    local uri="$(printf 'https://github.com/%s.git' "$repo")"
     git clone --depth=1 "$uri"
   fi
 }
