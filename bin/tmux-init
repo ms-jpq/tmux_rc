@@ -18,7 +18,7 @@ git_update() {
   if [[ -d "$dest" ]]
   then
     (
-      cd "$dest"
+      cd "$dest" || exit 1
       git pull --no-rebase
     )
   else
