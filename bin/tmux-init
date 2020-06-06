@@ -3,7 +3,9 @@
 set -eu
 set -o pipefail
 
+
 cd "$(dirname "$0")/.." || exit 1
+
 
 plugins="$(rg '^set -g @plugin' < tmux.conf)"
 repos="$(echo "$plugins" | sd 'set -g @plugin "([^"]+)"' '$1')"
