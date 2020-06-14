@@ -8,7 +8,7 @@ cd "$(dirname "$0")/.." || exit 1
 
 
 plugins="$(rg '^set -g @plugin' < tmux.conf)"
-repos="$(echo "$plugins" | sd 'set -g @plugin "([^"]+)"' '$1')"
+repos="$(sd 'set -g @plugin "([^"]+)"' '$1' <<< "$plugins")"
 
 
 cd 'plugins' || exit 1
@@ -16,7 +16,7 @@ cd 'plugins' || exit 1
 
 git_update() {
   local repo="$1"
-  local dest="$(echo "$repo" | sd '[^/]+/' '')"
+  local dest="$(sd '[^/]+/' '' <<< "$repo")"
   if [[ -d "$dest" ]]
   then
     (
@@ -30,7 +30,9 @@ git_update() {
 }
 
 
-echo "$repos" | while read repo
+while read -r repo
 do
+  printf '%s\n' "$repo"
   git_update "$repo"
-done
+done <<< "$repos"
+
