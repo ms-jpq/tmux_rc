@@ -3,12 +3,13 @@
 set -eu
 set -o pipefail
 
+IFS=$'\n'
 
 cd "$(dirname "$0")/.." || exit 1
 
 
 plugins="$(rg '^set -g @plugin' < tmux.conf)"
-repos="$(sd 'set -g @plugin "([^"]+)"' '$1' <<< "$plugins")"
+repos=($(sd 'set -g @plugin "([^"]+)"' '$1' <<< "$plugins"))
 
 
 cd 'plugins' || exit 1
@@ -30,9 +31,9 @@ git_update() {
 }
 
 
-while read -r repo
+for repo in "${repos[@]}"
 do
   printf '%s\n' "$repo"
   git_update "$repo"
-done <<< "$repos"
+done
 
