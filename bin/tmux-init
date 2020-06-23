@@ -3,7 +3,6 @@
 set -eu
 set -o pipefail
 
-IFS=$'\n'
 
 cd "$(dirname "$0")/.." || exit 1
 
