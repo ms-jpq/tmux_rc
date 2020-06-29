@@ -8,7 +8,7 @@ cd "$(dirname "$0")/.." || exit 1
 
 
 plugins="$(rg '^set -g @plugin' < tmux.conf)"
-readarray repos < <(rg --replace '$1' -- 'set -g @plugin "([^"]+)"' <<< "$plugins")
+readarray -t repos < <(rg --replace '$1' -- 'set -g @plugin "([^"]+)"' <<< "$plugins")
 
 
 cd 'plugins' || exit 1
