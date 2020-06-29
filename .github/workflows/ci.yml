@@ -21,6 +21,3 @@ jobs:
 
       - name: Build
         run: ./docker/ci.sh
-
-  macos:
-    runs-on: macos-latest
