@@ -3,8 +3,9 @@ FROM ubuntu:latest
 
 RUN apt update && \
     apt install -y \
-    ripgrep git
+    tmux ripgrep git
 
 
-COPY . /_install
-RUN /_install/bin/tmux-init
+COPY . /root/.config/tmux
+WORKDIR /root/.config/tmux
+RUN /root/.config/tmux/bin/tmux-init
