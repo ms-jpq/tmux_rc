@@ -1,0 +1,26 @@
+---
+name: CI
+
+on:
+  push:
+  schedule:
+    - cron: "0 0 * * *" # daily
+
+jobs:
+  docker:
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Build
+        run: ./docker/ci.sh
+
+  macos:
+    runs-on: macos-latest
