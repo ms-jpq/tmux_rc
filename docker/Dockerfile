@@ -8,5 +8,5 @@ RUN apt update && \
 
 COPY . /root/.config/tmux
 WORKDIR /root/.config/tmux
-RUN /root/.config/tmux/bin/tmux-init && \
-    ln -s /root/.config/tmux/tmux.conf /root/.tmux.conf
+RUN ./bin/tmux-init && \
+    ln -s tmux.conf /root/.tmux.conf
