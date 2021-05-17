@@ -81,7 +81,7 @@ def main() -> None:
     line = (
         f"[CPU: {cpu} MEM: {mem}] "
         f"[R: {disk_read} W: {disk_write}] "
-        f"[⇡ {net_sent} ⇣ {net_recv}]"
+        f"[⥣ {net_sent} ⥥ {net_recv}]"
     )
     print(line)
 
