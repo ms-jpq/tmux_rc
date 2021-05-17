@@ -92,10 +92,10 @@ def main() -> None:
     net_recv = f"{_human_readable_size(stats.net_recv,precision=0)}B"
 
     line = (
-        f"{_colour(stats.cpu_percent)}λ{cpu}{_TRANS} "
-        f"{_colour(stats.mem_percent)}τ{mem}{_TRANS} "
-        f"[R: {disk_read} W: {disk_write}] "
-        f"[⇡ {net_sent} ⇣ {net_recv}]"
+        f"[⇡ {net_sent} ⇣ {net_recv}] "
+        f"[📖 {disk_read} ✏️  {disk_write}] "
+        f"{_colour(stats.cpu_percent)} λ{cpu} {_TRANS} "
+        f"{_colour(stats.mem_percent)} τ{mem} {_TRANS}"
     )
     print(line)
 
