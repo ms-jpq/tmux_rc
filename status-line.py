@@ -13,10 +13,14 @@ from psutil import cpu_percent, disk_io_counters, net_io_counters, virtual_memor
 
 _INTERVAL = 1
 
-_LO, _MED, _HI = (
+_LO_TIDE = 40
+_HI_TIDE = 80
+
+_LO, _MED, _HI, _TRANS = (
     environ["tmux_colour_low"],
     environ["tmux_colour_med"],
     environ["tmux_colour_hi"],
+    environ["tmux_trans"],
 )
 
 
@@ -66,6 +70,15 @@ def _measure() -> _Stats:
     return stats
 
 
+def _colour(val: int) -> str:
+    if val < _LO_TIDE:
+        return f"#[bg={_LO}]"
+    elif val < _HI_TIDE:
+        return f"#[bg={_MED}]"
+    else:
+        return f"#[bg={_HI}]"
+
+
 def main() -> None:
     stats = _measure()
 
@@ -79,7 +92,8 @@ def main() -> None:
     net_recv = f"{_human_readable_size(stats.net_recv,precision=0)}B"
 
     line = (
-        f"λ{cpu}  τ{mem} "
+        f"{_colour(stats.cpu_percent)}λ{cpu}{_TRANS} "
+        f"{_colour(stats.mem_percent)}τ{mem}{_TRANS} "
         f"[R: {disk_read} W: {disk_write}] "
         f"[⇡ {net_sent} ⇣ {net_recv}]"
     )
