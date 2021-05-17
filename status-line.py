@@ -69,8 +69,8 @@ def _measure() -> _Stats:
 def main() -> None:
     stats = _measure()
 
-    cpu = f"{stats.cpu_percent}%"
-    mem = f"{stats.mem_percent}%"
+    cpu = f"{format(stats.cpu_percent, '3d')}%"
+    mem = f"{format(stats.mem_percent, '3d')}%"
 
     disk_read = f"{_human_readable_size(stats.disk_read,precision=0)}B"
     disk_write = f"{_human_readable_size(stats.disk_write,precision=0)}B"
@@ -79,9 +79,9 @@ def main() -> None:
     net_recv = f"{_human_readable_size(stats.net_recv,precision=0)}B"
 
     line = (
-        f"[CPU: {cpu} MEM: {mem}] "
+        f"λ{cpu}  τ{mem} "
         f"[R: {disk_read} W: {disk_write}] "
-        f"[⥣ {net_sent} ⥥ {net_recv}]"
+        f"[⇡ {net_sent} ⇣ {net_recv}]"
     )
     print(line)
 
