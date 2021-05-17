@@ -48,7 +48,6 @@ def _human_readable_size(size: float, precision: int = 3) -> str:
 
 
 def _measure() -> _Stats:
-    _ = cpu_percent()
     disk_1 = cast(Any, disk_io_counters())
     net_1 = cast(Any, net_io_counters())
 
