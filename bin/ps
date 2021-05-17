@@ -12,8 +12,8 @@ RT_PY="$RT_DIR/bin/python"
 
 if [[ ! -x "$RT_PY" ]]
 then
-  python3 -m venv -- "$RT_DIR"
-  "$RT_PY" -m pip install --upgrade --requirement requirements.txt
+  >&2 python3 -m venv -- "$RT_DIR"
+  >&2 "$RT_PY" -m pip install --upgrade --requirement requirements.txt
 fi
 
 
