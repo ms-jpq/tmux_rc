@@ -3,18 +3,22 @@
 from dataclasses import dataclass
 from functools import partial
 from itertools import count
+from json import dumps, loads
 from locale import str as format_float
 from operator import pow
 from os import environ
-from time import sleep
-from typing import Any, cast
+from pathlib import Path
+from tempfile import gettempdir
+from typing import Any, Optional, cast
 
-from psutil import cpu_percent, disk_io_counters, net_io_counters, virtual_memory
-
-_INTERVAL = 1
+from psutil import cpu_times, disk_io_counters, net_io_counters, virtual_memory
 
 _LO_TIDE = 40
 _HI_TIDE = 80
+
+_TMP = Path(gettempdir())
+_TMUX = Path(environ["TMUX"])
+_SNAPSHOT = _TMP / "tmux-status-line" / _TMUX.name
 
 _LO, _MED, _HI, _TRANS = (
     environ["tmux_colour_low"],
@@ -22,6 +26,15 @@ _LO, _MED, _HI, _TRANS = (
     environ["tmux_colour_hi"],
     environ["tmux_trans"],
 )
+
+
+@dataclass(frozen=True)
+class _Snapshot:
+    cpu_times: Any
+    disk_read: int
+    disk_write: int
+    net_sent: int
+    net_recv: int
 
 
 @dataclass(frozen=True)
@@ -47,24 +60,41 @@ def _human_readable_size(size: float, precision: int = 3) -> str:
         raise ValueError(f"unit over flow: {size}")
 
 
-def _measure() -> _Stats:
-    disk_1 = cast(Any, disk_io_counters())
-    net_1 = cast(Any, net_io_counters())
+def _load() -> Optional[_Snapshot]:
+    _SNAPSHOT.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        raw = _SNAPSHOT.read_text()
+    except FileNotFoundError:
+        return None
+    else:
+        json = loads(raw)
+        snapshot = _Snapshot(**json)
+        return snapshot
 
-    sleep(_INTERVAL)
 
-    cpu = int(cast(float, cpu_percent()))
+def _snap() -> _Snapshot:
+    cpu = cast(Any, cpu_times())
+    disk = cast(Any, disk_io_counters())
+    net = cast(Any, net_io_counters())
+    snapshot = _Snapshot(
+        cpu_times=cpu,
+        disk_read=disk.read_bytes,
+        disk_write=disk.write_bytes,
+        net_sent=net.bytes_sent,
+        net_recv=net.bytes_recv,
+    )
+    return snapshot
+
+
+def _measure(s1: _Snapshot, s2: _Snapshot) -> _Stats:
     mem = virtual_memory()
-    disk_2 = cast(Any, disk_io_counters())
-    net_2 = cast(Any, net_io_counters())
-
     stats = _Stats(
         cpu_percent=cpu,
         mem_percent=int(mem.percent),
-        disk_read=disk_2.read_bytes - disk_1.read_bytes,
-        disk_write=disk_2.write_bytes - disk_1.write_bytes,
-        net_sent=net_2.bytes_sent - net_1.bytes_sent,
-        net_recv=net_2.bytes_recv - net_1.bytes_recv,
+        disk_read=s2.disk_read - s1.disk_read,
+        disk_write=s2.disk_write - s1.disk_write,
+        net_sent=s2.net_sent - s1.net_sent,
+        net_recv=s2.net_recv - s1.net_recv,
     )
     return stats
 
@@ -79,7 +109,11 @@ def _colour(val: int) -> str:
 
 
 def main() -> None:
-    stats = _measure()
+    s1, s2 = _load() or _snap(), _snap()
+    json = dumps(s2)
+    _SNAPSHOT.write_text(json)
+
+    stats = _measure(s1, s2)
 
     cpu = f"{format(stats.cpu_percent, '3d')}%"
     mem = f"{format(stats.mem_percent, '3d')}%"
