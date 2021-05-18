@@ -10,7 +10,6 @@ from os import environ
 from pathlib import Path
 from sys import platform
 from tempfile import gettempdir
-from textwrap import fill
 from typing import Any, Mapping, NamedTuple, Optional, cast
 
 from psutil import cpu_times, disk_io_counters, net_io_counters, virtual_memory
