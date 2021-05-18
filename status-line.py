@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from functools import partial
 from itertools import count
 from json import dumps, loads
@@ -27,10 +27,12 @@ _LO, _MED, _HI, _TRANS = (
     environ["tmux_trans"],
 )
 
+_CPU_TIME = Any
+
 
 @dataclass(frozen=True)
 class _Snapshot:
-    cpu_times: Any
+    cpu_times: _CPU_TIME
     disk_read: int
     disk_write: int
     net_sent: int
@@ -89,7 +91,7 @@ def _snap() -> _Snapshot:
 def _measure(s1: _Snapshot, s2: _Snapshot) -> _Stats:
     mem = virtual_memory()
     stats = _Stats(
-        cpu_percent=cpu,
+        cpu_percent=0,
         mem_percent=int(mem.percent),
         disk_read=s2.disk_read - s1.disk_read,
         disk_write=s2.disk_write - s1.disk_write,
@@ -110,7 +112,7 @@ def _colour(val: int) -> str:
 
 def main() -> None:
     s1, s2 = _load() or _snap(), _snap()
-    json = dumps(s2)
+    json = dumps(asdict(s2))
     _SNAPSHOT.write_text(json)
 
     stats = _measure(s1, s2)
