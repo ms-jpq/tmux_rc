@@ -10,6 +10,7 @@ from os import environ
 from pathlib import Path
 from sys import platform
 from tempfile import gettempdir
+from textwrap import fill
 from typing import Any, Mapping, NamedTuple, Optional, cast
 
 from psutil import cpu_times, disk_io_counters, net_io_counters, virtual_memory
@@ -139,11 +140,11 @@ def main() -> None:
     cpu = f"{format(stats.cpu, '4.0%')}"
     mem = f"{format(stats.mem, '4.0%')}"
 
-    disk_read = f"{_human_readable_size(stats.disk_read,precision=0)}B"
-    disk_write = f"{_human_readable_size(stats.disk_write,precision=0)}B"
+    disk_read = f"{_human_readable_size(stats.disk_read,precision=0)}B".rjust(5)
+    disk_write = f"{_human_readable_size(stats.disk_write,precision=0)}B".rjust(5)
 
-    net_sent = f"{_human_readable_size(stats.net_sent,precision=0)}B"
-    net_recv = f"{_human_readable_size(stats.net_recv,precision=0)}B"
+    net_sent = f"{_human_readable_size(stats.net_sent,precision=0)}B".rjust(5)
+    net_recv = f"{_human_readable_size(stats.net_recv,precision=0)}B".rjust(5)
 
     line = (
         f"[⇡ {net_sent} ⇣ {net_recv}] "
