@@ -9,7 +9,7 @@ from operator import pow
 from os import environ
 from pathlib import Path
 from tempfile import gettempdir
-from typing import Any, Optional, cast
+from typing import Any, Mapping, NamedTuple, Optional, cast
 
 from psutil import cpu_times, disk_io_counters, net_io_counters, virtual_memory
 
@@ -27,12 +27,10 @@ _LO, _MED, _HI, _TRANS = (
     environ["tmux_trans"],
 )
 
-_CPU_TIME = Any
-
 
 @dataclass(frozen=True)
 class _Snapshot:
-    cpu_times: _CPU_TIME
+    cpu_times: Mapping[str, float]
     disk_read: int
     disk_write: int
     net_sent: int
@@ -75,11 +73,11 @@ def _load() -> Optional[_Snapshot]:
 
 
 def _snap() -> _Snapshot:
-    cpu = cast(Any, cpu_times())
+    cpu = cast(NamedTuple, cpu_times())
     disk = cast(Any, disk_io_counters())
     net = cast(Any, net_io_counters())
     snapshot = _Snapshot(
-        cpu_times=cpu,
+        cpu_times=cpu._asdict(),
         disk_read=disk.read_bytes,
         disk_write=disk.write_bytes,
         net_sent=net.bytes_sent,
@@ -89,6 +87,10 @@ def _snap() -> _Snapshot:
 
 
 def _measure(s1: _Snapshot, s2: _Snapshot) -> _Stats:
+    cpu_delta = {
+        k: v2 - v1
+        for (k, v1), (_, v2) in zip(s1.cpu_times.items(), s2.cpu_times.items())
+    }
     mem = virtual_memory()
     stats = _Stats(
         cpu_percent=0,
@@ -112,7 +114,7 @@ def _colour(val: int) -> str:
 
 def main() -> None:
     s1, s2 = _load() or _snap(), _snap()
-    json = dumps(asdict(s2))
+    json = dumps(asdict(s2), check_circular=False, ensure_ascii=False)
     _SNAPSHOT.write_text(json)
 
     stats = _measure(s1, s2)
