@@ -14,8 +14,8 @@ from typing import Any, Mapping, NamedTuple, Optional, cast
 
 from psutil import cpu_times, disk_io_counters, net_io_counters, virtual_memory
 
-_LO_TIDE = 40
-_HI_TIDE = 80
+_LO_TIDE = 0.4
+_HI_TIDE = 0.8
 
 _TMP = Path(gettempdir())
 _TMUX = Path(environ["TMUX"])
@@ -40,8 +40,8 @@ class _Snapshot:
 
 @dataclass(frozen=True)
 class _Stats:
-    cpu_percent: int
-    mem_percent: int
+    cpu: float
+    mem: float
     disk_read: int
     disk_write: int
     net_sent: int
@@ -87,7 +87,7 @@ def _snap() -> _Snapshot:
     return snapshot
 
 
-def _cpu(delta: Mapping[str, float]) -> int:
+def _cpu(delta: Mapping[str, float]) -> float:
     tot = sum(delta.values())
     busy = tot
 
@@ -98,7 +98,7 @@ def _cpu(delta: Mapping[str, float]) -> int:
         tot -= delta.get("guest", 0)
         tot -= delta.get("guest_nice", 0)
     try:
-        return int(busy / tot * 100)
+        return busy / tot
     except ZeroDivisionError:
         return 0
 
@@ -110,8 +110,8 @@ def _measure(s1: _Snapshot, s2: _Snapshot) -> _Stats:
     }
     mem = virtual_memory()
     stats = _Stats(
-        cpu_percent=_cpu(cpu_delta),
-        mem_percent=int(mem.percent),
+        cpu=_cpu(cpu_delta),
+        mem=(mem.total - mem.available) / mem.total,
         disk_read=s2.disk_read - s1.disk_read,
         disk_write=s2.disk_write - s1.disk_write,
         net_sent=s2.net_sent - s1.net_sent,
@@ -120,7 +120,7 @@ def _measure(s1: _Snapshot, s2: _Snapshot) -> _Stats:
     return stats
 
 
-def _colour(val: int) -> str:
+def _colour(val: float) -> str:
     if val < _LO_TIDE:
         return f"#[bg={_LO}]"
     elif val < _HI_TIDE:
@@ -136,8 +136,8 @@ def main() -> None:
 
     stats = _measure(s1, s2)
 
-    cpu = f"{format(stats.cpu_percent, '3d')}%"
-    mem = f"{format(stats.mem_percent, '3d')}%"
+    cpu = f"{format(stats.cpu, '3.0%')}"
+    mem = f"{format(stats.mem, '3.0%')}"
 
     disk_read = f"{_human_readable_size(stats.disk_read,precision=0)}B"
     disk_write = f"{_human_readable_size(stats.disk_write,precision=0)}B"
@@ -148,8 +148,8 @@ def main() -> None:
     line = (
         f"[⇡ {net_sent} ⇣ {net_recv}] "
         f"[📖 {disk_read} ✏️  {disk_write}] "
-        f"{_colour(stats.cpu_percent)} λ{cpu} {_TRANS} "
-        f"{_colour(stats.mem_percent)} τ{mem} {_TRANS}"
+        f"{_colour(stats.cpu)} λ {cpu} {_TRANS} "
+        f"{_colour(stats.mem)} τ {mem} {_TRANS}"
     )
     print(line)
 
