@@ -89,14 +89,14 @@ def _snap() -> _Snapshot:
 
 def _cpu(delta: Mapping[str, float]) -> float:
     tot = sum(delta.values())
-    busy = tot
-
-    busy -= delta["idle"]
-    busy -= delta.get("iowait", 0)
-
     if platform.startswith("linux"):
         tot -= delta.get("guest", 0)
         tot -= delta.get("guest_nice", 0)
+
+    busy = tot
+    busy -= delta["idle"]
+    busy -= delta.get("iowait", 0)
+
     try:
         return busy / tot
     except ZeroDivisionError:
