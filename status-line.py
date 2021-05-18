@@ -8,6 +8,7 @@ from locale import str as format_float
 from operator import pow
 from os import environ
 from pathlib import Path
+from sys import platform
 from tempfile import gettempdir
 from typing import Any, Mapping, NamedTuple, Optional, cast
 
@@ -86,14 +87,30 @@ def _snap() -> _Snapshot:
     return snapshot
 
 
+def _cpu(delta: Mapping[str, float]) -> int:
+    tot = sum(delta.values())
+    busy = tot
+
+    busy -= delta["idle"]
+    busy -= delta.get("iowait", 0)
+
+    if platform.startswith("linux"):
+        tot -= delta.get("guest", 0)
+        tot -= delta.get("guest_nice", 0)
+    try:
+        return int(busy / tot * 100)
+    except ZeroDivisionError:
+        return 0
+
+
 def _measure(s1: _Snapshot, s2: _Snapshot) -> _Stats:
     cpu_delta = {
-        k: v2 - v1
+        k: max(0, v2 - v1)
         for (k, v1), (_, v2) in zip(s1.cpu_times.items(), s2.cpu_times.items())
     }
     mem = virtual_memory()
     stats = _Stats(
-        cpu_percent=0,
+        cpu_percent=_cpu(cpu_delta),
         mem_percent=int(mem.percent),
         disk_read=s2.disk_read - s1.disk_read,
         disk_write=s2.disk_write - s1.disk_write,
