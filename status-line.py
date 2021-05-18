@@ -136,8 +136,8 @@ def main() -> None:
 
     stats = _measure(s1, s2)
 
-    cpu = f"{format(stats.cpu, '3.0%')}"
-    mem = f"{format(stats.mem, '3.0%')}"
+    cpu = f"{format(stats.cpu, '4.0%')}"
+    mem = f"{format(stats.mem, '4.0%')}"
 
     disk_read = f"{_human_readable_size(stats.disk_read,precision=0)}B"
     disk_write = f"{_human_readable_size(stats.disk_write,precision=0)}B"
@@ -148,8 +148,8 @@ def main() -> None:
     line = (
         f"[⇡ {net_sent} ⇣ {net_recv}] "
         f"[📖 {disk_read} ✏️  {disk_write}] "
-        f"{_colour(stats.cpu)} λ {cpu} {_TRANS} "
-        f"{_colour(stats.mem)} τ {mem} {_TRANS}"
+        f"{_colour(stats.cpu)} λ{cpu} {_TRANS} "
+        f"{_colour(stats.mem)} τ{mem} {_TRANS}"
     )
     print(line)
 
