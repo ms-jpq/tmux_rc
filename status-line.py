@@ -95,10 +95,7 @@ def _cpu(delta: Mapping[str, float]) -> float:
     busy -= delta["idle"]
     busy -= delta.get("iowait", 0)
 
-    try:
-        return busy / tot
-    except ZeroDivisionError:
-        return 0
+    return busy / tot
 
 
 def _measure(s1: _Snapshot, s2: _Snapshot) -> _Stats:
