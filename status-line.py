@@ -17,9 +17,7 @@ from psutil import cpu_times, disk_io_counters, net_io_counters, virtual_memory
 _LO_TIDE = 0.4
 _HI_TIDE = 0.8
 
-_TMP = Path(gettempdir())
-_TMUX = Path(environ["TMUX"])
-_SNAPSHOT = _TMP / "tmux-status-line" / _TMUX.name
+_SNAPSHOT = Path(gettempdir()) / "tmux-status-line" / Path(environ["TMUX"]).name
 
 _LO, _MED, _HI, _TRANS = (
     environ["tmux_colour_low"],
