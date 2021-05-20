@@ -112,10 +112,10 @@ def _measure(s1: _Snapshot, s2: _Snapshot) -> _Stats:
     stats = _Stats(
         cpu=_cpu(cpu_delta),
         mem=(mem.total - mem.available) / mem.total,
-        disk_read=s2.disk_read - s1.disk_read,
-        disk_write=s2.disk_write - s1.disk_write,
-        net_sent=s2.net_sent - s1.net_sent,
-        net_recv=s2.net_recv - s1.net_recv,
+        disk_read=max(0, s2.disk_read - s1.disk_read),
+        disk_write=max(0, s2.disk_write - s1.disk_write),
+        net_sent=max(0, s2.net_sent - s1.net_sent),
+        net_recv=max(0, s2.net_recv - s1.net_recv),
     )
     return stats
 
