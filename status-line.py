@@ -10,6 +10,7 @@ from os import environ
 from pathlib import Path
 from sys import platform
 from tempfile import gettempdir
+from time import time
 from typing import Any, Mapping, NamedTuple, Optional, cast
 
 from psutil import cpu_times, disk_io_counters, net_io_counters, virtual_memory
@@ -29,6 +30,7 @@ _LO, _MED, _HI, _TRANS = (
 
 @dataclass(frozen=True)
 class _Snapshot:
+    time: float
     cpu_times: Mapping[str, float]
     disk_read: int
     disk_write: int
@@ -40,10 +42,10 @@ class _Snapshot:
 class _Stats:
     cpu: float
     mem: float
-    disk_read: int
-    disk_write: int
-    net_sent: int
-    net_recv: int
+    disk_read: float
+    disk_write: float
+    net_sent: float
+    net_recv: float
 
 
 def _human_readable_size(size: float, precision: int = 3) -> str:
@@ -76,6 +78,7 @@ def _snap() -> _Snapshot:
     disk = cast(Any, disk_io_counters())
     net = cast(Any, net_io_counters())
     snapshot = _Snapshot(
+        time=time(),
         cpu_times=cpu._asdict(),
         disk_read=disk.read_bytes,
         disk_write=disk.write_bytes,
@@ -95,22 +98,30 @@ def _cpu(delta: Mapping[str, float]) -> float:
     busy -= delta["idle"]
     busy -= delta.get("iowait", 0)
 
-    return busy / tot
+    try:
+        return busy / tot
+    except ZeroDivisionError:
+        return 0
 
 
 def _measure(s1: _Snapshot, s2: _Snapshot) -> _Stats:
+    try:
+        time_adjust = 1 / (s2.time - s1.time)
+    except ZeroDivisionError:
+        time_adjust = 0
+
     cpu_delta = {
         k: max(0, v2 - v1)
         for (k, v1), (_, v2) in zip(s1.cpu_times.items(), s2.cpu_times.items())
     }
     mem = virtual_memory()
     stats = _Stats(
-        cpu=_cpu(cpu_delta),
-        mem=(mem.total - mem.available) / mem.total,
-        disk_read=max(0, s2.disk_read - s1.disk_read),
-        disk_write=max(0, s2.disk_write - s1.disk_write),
-        net_sent=max(0, s2.net_sent - s1.net_sent),
-        net_recv=max(0, s2.net_recv - s1.net_recv),
+        cpu=_cpu(cpu_delta) * time_adjust,
+        mem=((mem.total - mem.available) / mem.total) * time_adjust,
+        disk_read=max(0, s2.disk_read - s1.disk_read) * time_adjust,
+        disk_write=max(0, s2.disk_write - s1.disk_write) * time_adjust,
+        net_sent=max(0, s2.net_sent - s1.net_sent) * time_adjust,
+        net_recv=max(0, s2.net_recv - s1.net_recv) * time_adjust,
     )
     return stats
 
@@ -150,3 +161,4 @@ def main() -> None:
 
 
 main()
+
