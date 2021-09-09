@@ -165,13 +165,13 @@ def main() -> None:
     net_sent = f"{_human_readable_size(stats.net_sent, precision=0)}B".rjust(5)
     net_recv = f"{_human_readable_size(stats.net_recv, precision=0)}B".rjust(5)
 
-    line = (
-        f"[⇡ {net_sent} ⇣ {net_recv}] "
-        f"[📖 {disk_read} ✏️  {disk_write}] "
-        f"{_colour(stats.cpu)} λ{cpu} {_TRANS} "
-        f"{_colour(stats.mem)} τ{mem} {_TRANS}"
+    sections = (
+        f"[⇡ {net_sent} ⇣ {net_recv}]",
+        f"[📖 {disk_read} ✏️  {disk_write}]",
+        f"{_colour(stats.cpu)} λ{cpu} {_TRANS}",
+        f"{_colour(stats.mem)} τ{mem} {_TRANS}",
     )
-    print(line, end="")
+    print(*sections, end="")
 
 
 main()
