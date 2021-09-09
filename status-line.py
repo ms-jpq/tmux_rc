@@ -52,7 +52,8 @@ _LO, _MED, _HI, _TRANS = (
 )
 
 
-def _dump(path: PurePath, thing: str) -> None:
+def _dump(path: Path, thing: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
     with suppress(FileNotFoundError), NamedTemporaryFile(
         dir=path.parent, mode="w"
     ) as f:
@@ -75,7 +76,6 @@ def _human_readable_size(size: float, precision: int = 3) -> str:
 
 
 def _load() -> Optional[_Snapshot]:
-    _SNAPSHOT.parent.mkdir(parents=True, exist_ok=True)
     try:
         raw = _SNAPSHOT.read_text()
     except FileNotFoundError:
