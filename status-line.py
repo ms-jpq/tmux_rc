@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from contextlib import suppress
 from dataclasses import asdict, dataclass
 from functools import partial
 from itertools import count
@@ -7,9 +8,9 @@ from json import dumps, loads
 from locale import str as format_float
 from operator import pow
 from os import environ
-from pathlib import Path
+from pathlib import Path, PurePath
 from sys import platform
-from tempfile import gettempdir
+from tempfile import NamedTemporaryFile, gettempdir
 from time import time
 from typing import Any, Mapping, NamedTuple, Optional, cast
 
@@ -46,6 +47,15 @@ class _Stats:
     disk_write: float
     net_sent: float
     net_recv: float
+
+
+def _dump(path: PurePath, thing: str) -> None:
+    with suppress(FileNotFoundError), NamedTemporaryFile(
+        dir=path.parent, mode="w"
+    ) as f:
+        f.write(thing)
+        f.flush()
+        Path(f.name).replace(path)
 
 
 def _human_readable_size(size: float, precision: int = 3) -> str:
@@ -138,7 +148,7 @@ def _colour(val: float) -> str:
 def main() -> None:
     s1, s2 = _load() or _snap(), _snap()
     json = dumps(asdict(s2), check_circular=False, ensure_ascii=False)
-    _SNAPSHOT.write_text(json)
+    _dump(_SNAPSHOT, thing=json)
 
     stats = _measure(s1, s2)
 
@@ -161,4 +171,3 @@ def main() -> None:
 
 
 main()
-
