@@ -3,6 +3,7 @@
 from contextlib import suppress
 from dataclasses import asdict, dataclass
 from functools import partial
+from hashlib import md5
 from itertools import count
 from json import dumps, loads
 from locale import str as format_float
@@ -18,7 +19,9 @@ from psutil import cpu_times, disk_io_counters, net_io_counters, virtual_memory
 
 _LO_TIDE, _HI_TIDE = 0.4, 0.8
 
-_SNAPSHOT = Path(gettempdir()) / "tmux-status-line" / Path(environ["TMUX"]).name
+_SNAPSHOT = (
+    Path(gettempdir()) / "tmux-status-line" / md5(environ["TMUX"].encode()).hexdigest()
+)
 
 _LO, _MED, _HI, _TRANS = (
     environ["tmux_colour_low"],
