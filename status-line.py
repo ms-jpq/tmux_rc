@@ -171,7 +171,7 @@ def main() -> None:
         f"{_colour(stats.cpu)} λ{cpu} {_TRANS} "
         f"{_colour(stats.mem)} τ{mem} {_TRANS}"
     )
-    print(line)
+    print(line, end="")
 
 
 main()
