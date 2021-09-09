@@ -16,8 +16,7 @@ from typing import Any, Mapping, NamedTuple, Optional, cast
 
 from psutil import cpu_times, disk_io_counters, net_io_counters, virtual_memory
 
-_LO_TIDE = 0.4
-_HI_TIDE = 0.8
+_LO_TIDE, _HI_TIDE = 0.4, 0.8
 
 _SNAPSHOT = Path(gettempdir()) / "tmux-status-line" / Path(environ["TMUX"]).name
 
