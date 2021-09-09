@@ -9,7 +9,7 @@ from json import dumps, loads
 from locale import str as format_float
 from operator import pow
 from os import environ
-from pathlib import Path, PurePath
+from pathlib import Path
 from sys import platform
 from tempfile import NamedTemporaryFile, gettempdir
 from time import time
