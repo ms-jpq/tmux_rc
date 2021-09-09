@@ -6,6 +6,7 @@ from functools import partial
 from hashlib import md5
 from itertools import count
 from json import dumps, loads
+from json.decoder import JSONDecodeError
 from locale import str as format_float
 from operator import pow
 from os import environ
@@ -78,11 +79,11 @@ def _human_readable_size(size: float, precision: int = 3) -> str:
 def _load() -> Optional[_Snapshot]:
     try:
         raw = _SNAPSHOT.read_text()
-    except FileNotFoundError:
-        return None
-    else:
         json = loads(raw)
         snapshot = _Snapshot(**json)
+    except (FileNotFoundError, JSONDecodeError):
+        return None
+    else:
         return snapshot
 
 
