@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from argparse import ArgumentParser, Namespace
 from contextlib import suppress
 from dataclasses import asdict, dataclass
 from functools import partial
@@ -38,8 +39,6 @@ class _Stats:
     net_sent: float
     net_recv: float
 
-
-_LO_TIDE, _HI_TIDE = 0.4, 0.8
 
 _SNAPSHOT = (
     Path(gettempdir()) / "tmux-status-line" / md5(environ["TMUX"].encode()).hexdigest()
@@ -140,16 +139,25 @@ def _measure(s1: _Snapshot, s2: _Snapshot) -> _Stats:
     return stats
 
 
-def _colour(val: float) -> str:
-    if val < _LO_TIDE:
+def _colour(lo: float, hi: float, val: float) -> str:
+    if val < lo:
         return f"#[bg={_LO}]"
-    elif val < _HI_TIDE:
+    elif val < hi:
         return f"#[bg={_MED}]"
     else:
         return f"#[bg={_HI}]"
 
 
+def _parse_args() -> Namespace:
+    parser = ArgumentParser()
+    parser.add_argument("--lo", type=float, required=True)
+    parser.add_argument("--hi", type=float, required=True)
+    return parser.parse_args()
+
+
 def main() -> None:
+    args = _parse_args()
+
     s1, s2 = _load() or _snap(), _snap()
     json = dumps(asdict(s2), check_circular=False, ensure_ascii=False)
     _dump(_SNAPSHOT, thing=json)
@@ -168,8 +176,8 @@ def main() -> None:
     sections = (
         f"[⇡ {net_sent} ⇣ {net_recv}]",
         f"[📖 {disk_read} ✏️  {disk_write}]",
-        f"{_colour(stats.cpu)} λ{cpu} {_TRANS}",
-        f"{_colour(stats.mem)} τ{mem} {_TRANS}",
+        f"{_colour(args.lo, args.hi, val=stats.cpu)} λ{cpu} {_TRANS}",
+        f"{_colour(args.lo, args.hi, val=stats.mem)} τ{mem} {_TRANS}",
     )
     print(*sections, end="")
 

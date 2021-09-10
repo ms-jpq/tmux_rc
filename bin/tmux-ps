@@ -17,4 +17,4 @@ then
 fi
 
 
-exec "$RT_PY" status-line.py
+exec "$RT_PY" status-line.py "$@"
