@@ -14,7 +14,7 @@ from pathlib import Path
 from sys import platform
 from tempfile import NamedTemporaryFile, gettempdir
 from time import sleep, time
-from typing import Any, Mapping, NamedTuple, Optional, cast
+from typing import Any, Mapping, NamedTuple, Optional, Tuple, cast
 
 from psutil import cpu_times, disk_io_counters, net_io_counters, virtual_memory
 
@@ -99,6 +99,20 @@ def _snap() -> _Snapshot:
     return snapshot
 
 
+def _states() -> Tuple[_Snapshot, _Snapshot]:
+    if s1 := _load():
+        s2 = _snap()
+    else:
+        s1 = _snap()
+        sleep(1)
+        s2 = _snap()
+
+    json = dumps(asdict(s2), check_circular=False, ensure_ascii=False)
+    _dump(_SNAPSHOT, thing=json)
+
+    return s1, s2
+
+
 def _cpu(delta: Mapping[str, float]) -> float:
     tot = sum(delta.values())
     if platform.startswith("linux"):
@@ -146,27 +160,7 @@ def _colour(lo: float, hi: float, val: float) -> str:
         return f"#[bg={_HI}]"
 
 
-def _parse_args() -> Namespace:
-    parser = ArgumentParser()
-    parser.add_argument("--lo", type=float, required=True)
-    parser.add_argument("--hi", type=float, required=True)
-    return parser.parse_args()
-
-
-def main() -> None:
-    args = _parse_args()
-    if s1 := _load():
-        s2 = _snap()
-    else:
-        s1 = _snap()
-        sleep(1)
-        s2 = _snap()
-
-    json = dumps(asdict(s2), check_circular=False, ensure_ascii=False)
-    _dump(_SNAPSHOT, thing=json)
-
-    stats = _measure(s1, s2)
-
+def _pprint(lo: float, hi: float, stats: _Stats) -> None:
     cpu = f"{format(stats.cpu, '4.0%')}"
     mem = f"{format(stats.mem, '4.0%')}"
 
@@ -179,10 +173,25 @@ def main() -> None:
     sections = (
         f"[⇡ {net_sent} ⇣ {net_recv}]",
         f"[📖 {disk_read} ✏️  {disk_write}]",
-        f"{_colour(args.lo, args.hi, val=stats.cpu)} λ{cpu} {_TRANS}",
-        f"{_colour(args.lo, args.hi, val=stats.mem)} τ{mem} {_TRANS}",
+        f"{_colour(lo, hi, val=stats.cpu)} λ{cpu} {_TRANS}",
+        f"{_colour(lo, hi, val=stats.mem)} τ{mem} {_TRANS}",
     )
+
     print(*sections, end="")
+
+
+def _parse_args() -> Namespace:
+    parser = ArgumentParser()
+    parser.add_argument("--lo", type=float, required=True)
+    parser.add_argument("--hi", type=float, required=True)
+    return parser.parse_args()
+
+
+def main() -> None:
+    args = _parse_args()
+    s1, s2 = _states()
+    stats = _measure(s1, s2)
+    _pprint(args.lo, args.hi, stats=stats)
 
 
 try:
