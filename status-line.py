@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 from argparse import ArgumentParser, Namespace
-from contextlib import suppress
 from dataclasses import asdict, dataclass
 from functools import partial
 from hashlib import md5
@@ -14,7 +13,7 @@ from os import environ
 from pathlib import Path
 from sys import platform
 from tempfile import NamedTemporaryFile, gettempdir
-from time import time
+from time import sleep, time
 from typing import Any, Mapping, NamedTuple, Optional, cast
 
 from psutil import cpu_times, disk_io_counters, net_io_counters, virtual_memory
@@ -54,12 +53,10 @@ _LO, _MED, _HI, _TRANS = (
 
 def _dump(path: Path, thing: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    with suppress(FileNotFoundError), NamedTemporaryFile(
-        dir=path.parent, mode="w"
-    ) as f:
-        f.write(thing)
-        f.flush()
-        Path(f.name).replace(path)
+    with NamedTemporaryFile(dir=path.parent, mode="w", delete=False) as fd:
+        fd.write(thing)
+        fd.flush()
+    Path(fd.name).replace(path)
 
 
 def _human_readable_size(size: float, precision: int = 3) -> str:
@@ -81,6 +78,7 @@ def _load() -> Optional[_Snapshot]:
         json = loads(raw)
         snapshot = _Snapshot(**json)
     except (FileNotFoundError, JSONDecodeError):
+        _SNAPSHOT.unlink(missing_ok=True)
         return None
     else:
         return snapshot
@@ -157,8 +155,13 @@ def _parse_args() -> Namespace:
 
 def main() -> None:
     args = _parse_args()
+    if s1 := _load():
+        s2 = _snap()
+    else:
+        s1 = _snap()
+        sleep(1)
+        s2 = _snap()
 
-    s1, s2 = _load() or _snap(), _snap()
     json = dumps(asdict(s2), check_circular=False, ensure_ascii=False)
     _dump(_SNAPSHOT, thing=json)
 
@@ -182,4 +185,7 @@ def main() -> None:
     print(*sections, end="")
 
 
-main()
+try:
+    main()
+except Exception as e:
+    print(e)
