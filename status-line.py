@@ -102,8 +102,7 @@ def _snap() -> _Snapshot:
 
 def _states() -> Tuple[_Snapshot, _Snapshot]:
     if s1 := _load():
-        t = time()
-        sleep(max(0, 1 - (t - s1.time)))
+        sleep(max(0, 1 - (time() - s1.time)))
         s2 = _snap()
     else:
         s1 = _snap()
