@@ -128,11 +128,7 @@ def _cpu(delta: Mapping[str, float]) -> float:
 
 
 def _measure(s1: _Snapshot, s2: _Snapshot) -> _Stats:
-    try:
-        time_adjust = 1 / (s2.time - s1.time)
-    except ZeroDivisionError:
-        time_adjust = 0
-
+    time_adjust = 1 / (s2.time - s1.time)
     cpu_delta = {
         k: max(0, v2 - v1)
         for (k, v1), (_, v2) in zip(s1.cpu_times.items(), s2.cpu_times.items())
