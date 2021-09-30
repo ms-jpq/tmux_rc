@@ -101,12 +101,13 @@ def _snap() -> _Snapshot:
 
 
 def _states() -> Tuple[_Snapshot, _Snapshot]:
+    span = 1
     if s1 := _load():
-        sleep(max(0, 1 - (time() - s1.time)))
+        sleep(max(0, span - (time() - s1.time)))
         s2 = _snap()
     else:
         s1 = _snap()
-        sleep(1)
+        sleep(max(0, span - (time() - s1.time)))
         s2 = _snap()
 
     json = dumps(asdict(s2), check_circular=False, ensure_ascii=False)
