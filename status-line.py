@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 from argparse import ArgumentParser, Namespace
 from dataclasses import asdict, dataclass
 from functools import partial
@@ -11,7 +10,7 @@ from locale import str as format_float
 from operator import pow
 from os import environ
 from pathlib import Path
-from sys import platform
+from sys import exit, platform
 from tempfile import NamedTemporaryFile, gettempdir
 from time import sleep, time
 from typing import Any, Mapping, NamedTuple, Optional, Tuple, cast
@@ -85,11 +84,12 @@ def _load() -> Optional[_Snapshot]:
 
 
 def _snap() -> _Snapshot:
+    t = time()
     cpu = cast(NamedTuple, cpu_times())
     disk = cast(Any, disk_io_counters())
     net = cast(Any, net_io_counters())
     snapshot = _Snapshot(
-        time=time(),
+        time=t,
         cpu_times=cpu._asdict(),
         disk_read=disk.read_bytes,
         disk_write=disk.write_bytes,
@@ -198,3 +198,6 @@ try:
     main()
 except Exception as e:
     print(e)
+    exit(1)
+else:
+    exit(0)
