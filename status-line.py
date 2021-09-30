@@ -11,7 +11,7 @@ from locale import str as format_float
 from operator import pow
 from os import environ
 from pathlib import Path
-from sys import exit, platform
+from platform import system
 from tempfile import NamedTemporaryFile, gettempdir
 from time import sleep, time
 from typing import Any, Mapping, NamedTuple, Optional, Tuple, cast
@@ -113,7 +113,7 @@ def _states() -> Tuple[_Snapshot, _Snapshot]:
 
 def _cpu(delta: Mapping[str, float]) -> float:
     tot = sum(delta.values())
-    if platform.startswith("linux"):
+    if system() == "Linux":
         tot -= delta.get("guest", 0)
         tot -= delta.get("guest_nice", 0)
 
@@ -196,6 +196,3 @@ try:
     main()
 except Exception as e:
     print(e)
-    exit(1)
-else:
-    exit(0)
