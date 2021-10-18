@@ -6,7 +6,7 @@ set -o pipefail
 cd "$(dirname "$0")/.." || exit 1
 
 
-RT_DIR="$PWD/.venv"
+RT_DIR="$PWD/venv"
 RT_PY="$RT_DIR/bin/python"
 
 
