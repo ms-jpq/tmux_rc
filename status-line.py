@@ -14,6 +14,7 @@ from pathlib import Path
 from platform import system
 from tempfile import NamedTemporaryFile, gettempdir
 from time import sleep, time
+from datetime import datetime
 from typing import Any, Mapping, NamedTuple, Optional, Tuple, cast
 
 from psutil import cpu_times, disk_io_counters, net_io_counters, virtual_memory
@@ -155,6 +156,8 @@ def _colour(lo: float, hi: float, val: float) -> str:
 
 
 def _pprint(lo: float, hi: float, stats: _Stats) -> None:
+    now = datetime.now().strftime("%x %X")
+
     cpu = f"{format(stats.cpu, '4.0%')}"
     mem = f"{format(stats.mem, '4.0%')}"
 
@@ -165,6 +168,7 @@ def _pprint(lo: float, hi: float, stats: _Stats) -> None:
     net_recv = f"{_human_readable_size(stats.net_recv, precision=0)}B".rjust(5)
 
     sections = (
+        f"@ {now} @",
         f"[⇡ {net_sent} ⇣ {net_recv}]",
         f"[📖 {disk_read} ✏️  {disk_write}]",
         f"{_colour(lo, hi, val=stats.cpu)} λ{cpu} {_TRANS}",
