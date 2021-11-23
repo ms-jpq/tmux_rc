@@ -168,17 +168,18 @@ def _style(style: str, text: str) -> str:
 def _stat_lines(lo: float, hi: float) -> Iterator[str]:
     s1, s2, battery = _states()
     stats = _measure(s1, s2)
-
-    cpu = f"{format(stats.cpu, '4.0%')}"
-    mem = f"{format(stats.mem, '4.0%')}"
-
-    disk_read = f"{_human_readable_size(stats.disk_read, precision=0)}B".rjust(5)
-    disk_write = f"{_human_readable_size(stats.disk_write, precision=0)}B".rjust(5)
-
-    net_sent = f"{_human_readable_size(stats.net_sent, precision=0)}B".rjust(5)
-    net_recv = f"{_human_readable_size(stats.net_recv, precision=0)}B".rjust(5)
-
     now = datetime.now().strftime("%X")
+
+    cpu = format(stats.cpu, "4.0%")
+    mem = format(stats.mem, "4.0%")
+
+    hr_dr = _human_readable_size(stats.disk_read, precision=0)
+    hr_dw = _human_readable_size(stats.disk_write, precision=0)
+    hr_ns = _human_readable_size(stats.net_sent, precision=0)
+    hr_nr = _human_readable_size(stats.net_recv, precision=0)
+
+    disk_read, disk_write = f"{hr_dr}B".rjust(5), f"{hr_dw}B".rjust(5)
+    net_sent, net_recv = f"{hr_ns}B".rjust(5), f"{hr_nr}B".rjust(5)
 
     yield f"[⇡ {net_sent} ⇣ {net_recv}]"
     yield f"[📖 {disk_read} ✏️  {disk_write}]"
