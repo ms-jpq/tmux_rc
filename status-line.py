@@ -2,6 +2,7 @@
 
 from argparse import ArgumentParser, Namespace
 from dataclasses import asdict, dataclass
+from datetime import datetime
 from functools import partial
 from hashlib import md5
 from itertools import count
@@ -14,7 +15,6 @@ from pathlib import Path
 from platform import system
 from tempfile import NamedTemporaryFile, gettempdir
 from time import sleep, time
-from datetime import datetime
 from typing import Any, Mapping, NamedTuple, Optional, Tuple, cast
 
 from psutil import cpu_times, disk_io_counters, net_io_counters, virtual_memory
@@ -192,7 +192,4 @@ def main() -> None:
     _pprint(args.lo, args.hi, stats=stats)
 
 
-try:
-    main()
-except Exception as e:
-    print(e)
+main()
