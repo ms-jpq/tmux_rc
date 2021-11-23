@@ -5,7 +5,7 @@ from dataclasses import asdict, dataclass
 from datetime import datetime
 from functools import partial
 from hashlib import md5
-from itertools import count
+from itertools import chain, count, repeat
 from json import dumps, loads
 from json.decoder import JSONDecodeError
 from locale import str as format_float
@@ -13,11 +13,18 @@ from operator import pow
 from os import environ
 from pathlib import Path
 from platform import system
+from sys import stdout
 from tempfile import NamedTemporaryFile, gettempdir
 from time import sleep, time
-from typing import Any, Mapping, NamedTuple, Optional, Tuple, cast
+from typing import Any, Iterator, Mapping, NamedTuple, Optional, Tuple, cast
 
-from psutil import cpu_times, disk_io_counters, net_io_counters, virtual_memory
+from psutil import (
+    cpu_times,
+    disk_io_counters,
+    net_io_counters,
+    sensors_battery,
+    virtual_memory,
+)
 
 
 @dataclass(frozen=True)
@@ -56,7 +63,6 @@ def _dump(path: Path, thing: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with NamedTemporaryFile(dir=path.parent, mode="w", delete=False) as fd:
         fd.write(thing)
-        fd.flush()
     Path(fd.name).replace(path)
 
 
@@ -108,7 +114,6 @@ def _states() -> Tuple[_Snapshot, _Snapshot]:
 
     json = dumps(asdict(s2), check_circular=False, ensure_ascii=False)
     _dump(_SNAPSHOT, thing=json)
-
     return s1, s2
 
 
@@ -155,8 +160,9 @@ def _colour(lo: float, hi: float, val: float) -> str:
         return f"#[bg={_HI}]"
 
 
-def _pprint(lo: float, hi: float, stats: _Stats) -> None:
-    now = datetime.now().strftime("%x %X")
+def _stat_lines(lo: float, hi: float) -> Iterator[str]:
+    s1, s2 = _states()
+    stats = _measure(s1, s2)
 
     cpu = f"{format(stats.cpu, '4.0%')}"
     mem = f"{format(stats.mem, '4.0%')}"
@@ -167,15 +173,17 @@ def _pprint(lo: float, hi: float, stats: _Stats) -> None:
     net_sent = f"{_human_readable_size(stats.net_sent, precision=0)}B".rjust(5)
     net_recv = f"{_human_readable_size(stats.net_recv, precision=0)}B".rjust(5)
 
-    sections = (
-        f"{{{now}}}",
-        f"[⇡ {net_sent} ⇣ {net_recv}]",
-        f"[📖 {disk_read} ✏️  {disk_write}]",
-        f"{_colour(lo, hi, val=stats.cpu)} λ{cpu} {_TRANS}",
-        f"{_colour(lo, hi, val=stats.mem)} τ{mem} {_TRANS}",
-    )
+    now = datetime.now().strftime("%x %X")
+    yield f"{{{now}}}"
+    yield f"[⇡ {net_sent} ⇣ {net_recv}]"
+    yield f"[📖 {disk_read} ✏️  {disk_write}]"
+    yield f"{_colour(lo, hi, val=stats.cpu)} λ{cpu} {_TRANS}"
+    yield f"{_colour(lo, hi, val=stats.mem)} τ{mem} {_TRANS}"
 
-    print(*sections, end="")
+    if battery := sensors_battery():
+        bp = battery.percent
+        yield "|"
+        yield f"{_colour(lo, hi, val=1 - bp / 100)}<{bp}%>{_TRANS}"
 
 
 def _parse_args() -> Namespace:
@@ -187,9 +195,9 @@ def _parse_args() -> Namespace:
 
 def main() -> None:
     args = _parse_args()
-    s1, s2 = _states()
-    stats = _measure(s1, s2)
-    _pprint(args.lo, args.hi, stats=stats)
+    lines = _stat_lines(args.lo, args.hi)
+    stream = chain.from_iterable(zip(lines, repeat(" ")))
+    stdout.writelines(stream)
 
 
 main()
