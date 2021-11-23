@@ -107,14 +107,15 @@ def _snap() -> _Snapshot:
     return snapshot
 
 
-def _states() -> Tuple[_Snapshot, _Snapshot]:
+def _states() -> Tuple[_Snapshot, _Snapshot, Optional[int]]:
     s1 = _load() or _snap()
+    battery = sensors_battery()
     sleep(max(0, 1 - (time() - s1.time)))
     s2 = _snap()
 
     json = dumps(asdict(s2), check_circular=False, ensure_ascii=False)
     _dump(_SNAPSHOT, thing=json)
-    return s1, s2
+    return s1, s2, battery.percent if battery else None
 
 
 def _cpu(delta: Mapping[str, float]) -> float:
@@ -165,7 +166,7 @@ def _style(style: str, text: str) -> str:
 
 
 def _stat_lines(lo: float, hi: float) -> Iterator[str]:
-    s1, s2 = _states()
+    s1, s2, battery = _states()
     stats = _measure(s1, s2)
 
     cpu = f"{format(stats.cpu, '4.0%')}"
@@ -177,19 +178,17 @@ def _stat_lines(lo: float, hi: float) -> Iterator[str]:
     net_sent = f"{_human_readable_size(stats.net_sent, precision=0)}B".rjust(5)
     net_recv = f"{_human_readable_size(stats.net_recv, precision=0)}B".rjust(5)
 
-    now = datetime.now().strftime("%x %X")
-    yield f"{{{now}}}"
+    now = datetime.now().strftime("%X")
+
     yield f"[⇡ {net_sent} ⇣ {net_recv}]"
     yield f"[📖 {disk_read} ✏️  {disk_write}]"
     yield _colour(lo, hi, val=stats.cpu, text=f"λ{cpu}")
     yield _colour(lo, hi, val=stats.mem, text=f"τ{mem}")
 
-    if battery := sensors_battery():
-        bp = battery.percent
-        yield "|"
-        yield _colour(
-            lo, hi, val=1 - bp / 100, text=_style("dotted-underscore", text=f"{bp}%")
-        )
+    yield "|"
+    yield _style("italics", text=f"{now}")
+    if battery is not None:
+        yield _style("dotted-underscore", text=f"{battery}%")
 
 
 def _parse_args() -> Namespace:
