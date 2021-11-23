@@ -182,8 +182,8 @@ def _stat_lines(lo: float, hi: float) -> Iterator[str]:
 
     yield f"[⇡ {net_sent} ⇣ {net_recv}]"
     yield f"[📖 {disk_read} ✏️  {disk_write}]"
-    yield _colour(lo, hi, val=stats.cpu, text=f"λ{cpu}")
-    yield _colour(lo, hi, val=stats.mem, text=f"τ{mem}")
+    yield _colour(lo, hi, val=stats.cpu, text=f" λ{cpu} ")
+    yield _colour(lo, hi, val=stats.mem, text=f" τ{mem} ")
 
     yield "|"
     yield _style("italics", text=f"{now}")
