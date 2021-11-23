@@ -181,8 +181,8 @@ def _stat_lines(lo: float, hi: float) -> Iterator[str]:
     disk_read, disk_write = f"{hr_dr}B".rjust(5), f"{hr_dw}B".rjust(5)
     net_sent, net_recv = f"{hr_ns}B".rjust(5), f"{hr_nr}B".rjust(5)
 
-    yield f"[⇡ {net_sent} ⇣ {net_recv}]"
-    yield f"[📖 {disk_read} ✏️  {disk_write}]"
+    yield f"[⇡ {net_sent}, ⇣ {net_recv}]"
+    yield f"[r {disk_read}, w {disk_write}]"
     yield _colour(lo, hi, val=stats.cpu, text=f" λ{cpu} ")
     yield _colour(lo, hi, val=stats.mem, text=f" τ{mem} ")
 
