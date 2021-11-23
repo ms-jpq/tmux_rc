@@ -168,7 +168,7 @@ def _pprint(lo: float, hi: float, stats: _Stats) -> None:
     net_recv = f"{_human_readable_size(stats.net_recv, precision=0)}B".rjust(5)
 
     sections = (
-        f"@ {now} @",
+        f"{{{now}}}",
         f"[⇡ {net_sent} ⇣ {net_recv}]",
         f"[📖 {disk_read} ✏️  {disk_write}]",
         f"{_colour(lo, hi, val=stats.cpu)} λ{cpu} {_TRANS}",
