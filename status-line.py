@@ -151,13 +151,17 @@ def _measure(s1: _Snapshot, s2: _Snapshot) -> _Stats:
     return stats
 
 
-def _colour(lo: float, hi: float, val: float) -> str:
+def _colour(lo: float, hi: float, val: float, text: str) -> str:
     if val < lo:
-        return f"#[bg={_LO}]"
+        return f"#[bg={_LO}]{text}{_TRANS}"
     elif val < hi:
-        return f"#[bg={_MED}]"
+        return f"#[bg={_MED}]{text}{_TRANS}"
     else:
-        return f"#[bg={_HI}]"
+        return f"#[bg={_HI}]{text}{_TRANS}"
+
+
+def _style(style: str, text: str) -> str:
+    return f"#[{style}]{text}#[none]"
 
 
 def _stat_lines(lo: float, hi: float) -> Iterator[str]:
@@ -177,13 +181,15 @@ def _stat_lines(lo: float, hi: float) -> Iterator[str]:
     yield f"{{{now}}}"
     yield f"[⇡ {net_sent} ⇣ {net_recv}]"
     yield f"[📖 {disk_read} ✏️  {disk_write}]"
-    yield f"{_colour(lo, hi, val=stats.cpu)} λ{cpu} {_TRANS}"
-    yield f"{_colour(lo, hi, val=stats.mem)} τ{mem} {_TRANS}"
+    yield _colour(lo, hi, val=stats.cpu, text=f"λ{cpu}")
+    yield _colour(lo, hi, val=stats.mem, text=f"τ{mem}")
 
     if battery := sensors_battery():
         bp = battery.percent
         yield "|"
-        yield f"{_colour(lo, hi, val=1 - bp / 100)}<{bp}%>{_TRANS}"
+        yield _colour(
+            lo, hi, val=1 - bp / 100, text=_style("dotted-underscore", text=f"{bp}%")
+        )
 
 
 def _parse_args() -> Namespace:
