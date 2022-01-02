@@ -2,7 +2,6 @@
 
 from argparse import ArgumentParser, Namespace
 from dataclasses import asdict, dataclass
-from datetime import datetime
 from functools import partial
 from hashlib import md5
 from itertools import chain, count, repeat
@@ -16,7 +15,7 @@ from platform import system
 from sys import stdout
 from tempfile import NamedTemporaryFile, gettempdir
 from time import sleep, time
-from typing import Any, Iterator, Mapping, NamedTuple, Optional, Tuple, cast
+from typing import Iterator, Mapping, NamedTuple, Optional, Tuple, cast
 
 from psutil import (
     cpu_times,
@@ -94,8 +93,8 @@ def _load() -> Optional[_Snapshot]:
 def _snap() -> _Snapshot:
     t = time()
     cpu = cast(NamedTuple, cpu_times())
-    disk = cast(Any, disk_io_counters())
-    net = cast(Any, net_io_counters())
+    disk = disk_io_counters()
+    net = net_io_counters()
     snapshot = _Snapshot(
         time=t,
         cpu_times=cpu._asdict(),
@@ -107,10 +106,10 @@ def _snap() -> _Snapshot:
     return snapshot
 
 
-def _states() -> Tuple[_Snapshot, _Snapshot, Optional[int]]:
+def _states(interval: int) -> Tuple[_Snapshot, _Snapshot, Optional[int]]:
     s1 = _load() or _snap()
     battery = sensors_battery()
-    sleep(max(0, 1 - (time() - s1.time)))
+    sleep(max(0, interval - (time() - s1.time)))
     s2 = _snap()
 
     json = dumps(asdict(s2), check_circular=False, ensure_ascii=False)
@@ -165,10 +164,9 @@ def _style(style: str, text: str) -> str:
     return f"#[{style}]{text}#[none]"
 
 
-def _stat_lines(lo: float, hi: float) -> Iterator[str]:
-    s1, s2, battery = _states()
+def _stat_lines(lo: float, hi: float, interval: int) -> Iterator[str]:
+    s1, s2, battery = _states(interval)
     stats = _measure(s1, s2)
-    now = datetime.now().strftime("%X")
 
     cpu = format(stats.cpu, "4.0%")
     mem = format(stats.mem, "4.0%")
@@ -186,22 +184,22 @@ def _stat_lines(lo: float, hi: float) -> Iterator[str]:
     yield _colour(lo, hi, val=stats.cpu, text=f" λ{cpu} ")
     yield _colour(lo, hi, val=stats.mem, text=f" τ{mem} ")
 
-    yield "|"
-    yield _style("italics", text=f"{now}")
     if battery is not None:
-        yield _style("dotted-underscore", text=f"{battery}%")
+        yield "|"
+        yield _style("italics", text=f"{battery}%")
 
 
 def _parse_args() -> Namespace:
     parser = ArgumentParser()
     parser.add_argument("--lo", type=float, required=True)
     parser.add_argument("--hi", type=float, required=True)
+    parser.add_argument("--interval", type=float, required=True)
     return parser.parse_args()
 
 
 def main() -> None:
     args = _parse_args()
-    lines = _stat_lines(args.lo, args.hi)
+    lines = _stat_lines(args.lo, args.hi, interval=args.interval)
     stream = chain.from_iterable(zip(lines, repeat(" ")))
     stdout.writelines(stream)
 
