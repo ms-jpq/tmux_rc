@@ -4,4 +4,4 @@ set -eu
 set -o pipefail
 
 
-exec tmux capture-pane -p -J -S -
+tmux capture-pane -p -S - | exec fzf
