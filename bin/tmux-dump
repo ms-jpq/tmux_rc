@@ -4,4 +4,4 @@ set -eu
 set -o pipefail
 
 
-exec tmux capture-pane -p -J -S -
+exec awk 'NF {print s $0; s=""; next} {s=s ORS}' <(tmux capture-pane -p -J -S -)
