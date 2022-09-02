@@ -4,4 +4,5 @@ set -eu
 set -o pipefail
 
 
-awk 'NF {print s $0; s=""; next} {s=s ORS}' <(tmux capture-pane -p -S -) | exec fzf
+DUMP="$(tmux capture-pane -p -S -)"
+exec fzf <<< "$DUMP"
