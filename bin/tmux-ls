@@ -3,4 +3,4 @@
 set -eu
 set -o pipefail
 
-exec tmux list-sessions -F '#{session_name}'
+exec tmux list-panes -a -F '#{session_name} #{window_index} #{pane_index} #{pane_id}'
