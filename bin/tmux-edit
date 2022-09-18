@@ -6,5 +6,5 @@ set -o pipefail
 
 TMP="$(mktemp)"
 trap 'rm --force -- "$TMP"' EXIT
-"$(dirname "$0")/tmux-dump" > "$TMP"
+"$(dirname -- "$0")/tmux-dump" > "$TMP"
 exec "$EDITOR" -- "$TMP"
