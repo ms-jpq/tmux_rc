@@ -1,6 +1,0 @@
-#!/usr/bin/env bash
-
-set -eu
-
-session="$(tmux list-sessions -F '#{session_name}' | fzf -0 -1)"
-exec tmux new-session -t "${session}"

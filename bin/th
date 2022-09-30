@@ -1,8 +1,0 @@
-#!/usr/bin/env bash
-
-set -eu
-set -o pipefail
-
-
-DUMP="$(tmux capture-pane -p -S -)"
-exec fzf <<< "$DUMP"
