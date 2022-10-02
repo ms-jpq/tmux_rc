@@ -27,6 +27,14 @@ from psutil import (
 
 
 @dataclass(frozen=True)
+class _Colours:
+    lo: str
+    md: str
+    hi: str
+    tr: str
+
+
+@dataclass(frozen=True)
 class _Snapshot:
     time: float
     cpu_times: Mapping[str, float]
@@ -48,13 +56,6 @@ class _Stats:
 
 _SNAPSHOT = (
     Path(gettempdir()) / "tmux-status-line" / md5(environ["TMUX"].encode()).hexdigest()
-)
-
-_LO, _MED, _HI, _TRANS = (
-    environ["tmux_colour_low"],
-    environ["tmux_colour_med"],
-    environ["tmux_colour_hi"],
-    environ["tmux_trans"],
 )
 
 
@@ -151,20 +152,22 @@ def _measure(s1: _Snapshot, s2: _Snapshot) -> _Stats:
     return stats
 
 
-def _colour(lo: float, hi: float, val: float, text: str) -> str:
+def _colour(lo: float, hi: float, val: float, text: str, colours: _Colours) -> str:
     if val < lo:
-        return f"#[bg={_LO}]{text}{_TRANS}"
+        return f"#[bg={colours.lo}]{text}{colours.tr}"
     elif val < hi:
-        return f"#[bg={_MED}]{text}{_TRANS}"
+        return f"#[bg={colours.md}]{text}{colours.tr}"
     else:
-        return f"#[bg={_HI}]{text}{_TRANS}"
+        return f"#[bg={colours.hi}]{text}{colours.tr}"
 
 
 def _style(style: str, text: str) -> str:
     return f"#[{style}]{text}#[none]"
 
 
-def _stat_lines(lo: float, hi: float, interval: int) -> Iterator[str]:
+def _stat_lines(
+    lo: float, hi: float, interval: int, colours: _Colours
+) -> Iterator[str]:
     s1, s2, battery = _states(interval)
     stats = _measure(s1, s2)
 
@@ -181,8 +184,8 @@ def _stat_lines(lo: float, hi: float, interval: int) -> Iterator[str]:
 
     yield f"[⇡ {net_sent}, ⇣ {net_recv}]"
     yield f"[r {disk_read}, w {disk_write}]"
-    yield _colour(lo, hi, val=stats.cpu, text=f" λ{cpu} ")
-    yield _colour(lo, hi, val=stats.mem, text=f" τ{mem} ")
+    yield _colour(lo, hi, val=stats.cpu, text=f" λ{cpu} ", colours=colours)
+    yield _colour(lo, hi, val=stats.mem, text=f" τ{mem} ", colours=colours)
 
     if battery is not None:
         yield "|"
@@ -194,12 +197,19 @@ def _parse_args() -> Namespace:
     parser.add_argument("--lo", type=float, required=True)
     parser.add_argument("--hi", type=float, required=True)
     parser.add_argument("--interval", type=float, required=True)
+    parser.add_argument("--colour-lo", required=True)
+    parser.add_argument("--colour-md", required=True)
+    parser.add_argument("--colour-hi", required=True)
+    parser.add_argument("--colour-tr", required=True)
     return parser.parse_args()
 
 
 def main() -> None:
     args = _parse_args()
-    lines = _stat_lines(args.lo, args.hi, interval=args.interval)
+    colours = _Colours(
+        lo=args.colour_lo, md=args.colour_md, hi=args.colour_hi, tr=args.colour_tr
+    )
+    lines = _stat_lines(args.lo, args.hi, interval=args.interval, colours=colours)
     stream = chain.from_iterable(zip(lines, repeat(" ")))
     stdout.writelines(stream)
 
