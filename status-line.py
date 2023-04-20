@@ -95,6 +95,8 @@ def _ssh(timeout: float) -> float | None:
             return inf
         else:
             return monotonic() - now
+    else:
+        return None
 
 
 def _load() -> _Snapshot | None:
