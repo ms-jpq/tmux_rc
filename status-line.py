@@ -8,14 +8,16 @@ from itertools import chain, count, repeat
 from json import dumps, loads
 from json.decoder import JSONDecodeError
 from locale import str as format_float
+from math import inf
 from operator import pow
 from os import environ
 from pathlib import Path
 from platform import system
+from subprocess import DEVNULL, TimeoutExpired, run
 from sys import stdout
 from tempfile import NamedTemporaryFile, gettempdir
-from time import sleep, time
-from typing import Iterator, Mapping, NamedTuple, Optional, Tuple, cast
+from time import monotonic, sleep, time
+from typing import Iterator, Mapping
 
 from psutil import (
     cpu_times,
@@ -79,7 +81,23 @@ def _human_readable_size(size: float, precision: int = 3) -> str:
         raise ValueError(f"unit over flow: {size}")
 
 
-def _load() -> Optional[_Snapshot]:
+def _ssh(timeout: float) -> float | None:
+    if client := environ.get("SSH_CLIENT"):
+        ip, *_ = client.split()
+        now = monotonic()
+        try:
+            run(
+                ("ping", "-n", "-c", "1", "-w", str(timeout), "-q", ip),
+                stdout=DEVNULL,
+                timeout=timeout + 1,
+            )
+        except TimeoutExpired:
+            return inf
+        else:
+            return monotonic() - now
+
+
+def _load() -> _Snapshot | None:
     try:
         raw = _SNAPSHOT.read_text()
         json = loads(raw)
@@ -93,21 +111,21 @@ def _load() -> Optional[_Snapshot]:
 
 def _snap() -> _Snapshot:
     t = time()
-    cpu = cast(NamedTuple, cpu_times())
+    cpu = cpu_times()
     disk = disk_io_counters()
     net = net_io_counters()
     snapshot = _Snapshot(
         time=t,
         cpu_times=cpu._asdict(),
-        disk_read=disk.read_bytes,
-        disk_write=disk.write_bytes,
+        disk_read=disk.read_bytes if disk else 0,
+        disk_write=disk.write_bytes if disk else 0,
         net_sent=net.bytes_sent,
         net_recv=net.bytes_recv,
     )
     return snapshot
 
 
-def _states(interval: int) -> Tuple[_Snapshot, _Snapshot, Optional[int]]:
+def _states(interval: int) -> tuple[_Snapshot, _Snapshot, int | None]:
     s1 = _load() or _snap()
     battery = sensors_battery()
     sleep(max(0, interval - (time() - s1.time)))
@@ -168,6 +186,8 @@ def _style(style: str, text: str) -> str:
 def _stat_lines(
     lo: float, hi: float, interval: int, colours: _Colours
 ) -> Iterator[str]:
+    ssh = _ssh(interval)
+
     s1, s2, battery = _states(interval)
     stats = _measure(s1, s2)
 
@@ -181,6 +201,10 @@ def _stat_lines(
 
     disk_read, disk_write = f"{hr_dr}B".rjust(5), f"{hr_dw}B".rjust(5)
     net_sent, net_recv = f"{hr_ns}B".rjust(5), f"{hr_nr}B".rjust(5)
+
+    if ssh:
+        ping = format(ssh * 1000, ".1f")
+        yield f"SSH > {ping} ms"
 
     yield f"[⇡ {net_sent}, ⇣ {net_recv}]"
     yield f"[r {disk_read}, w {disk_write}]"
