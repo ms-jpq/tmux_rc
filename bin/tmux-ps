@@ -1,20 +1,13 @@
-#!/usr/bin/env bash
-
-set -eu
-set -o pipefail
+#!/usr/bin/env -S -- bash -Eeuo pipefail -O dotglob -O failglob -O globstar
 
 cd "$(dirname -- "$0")/.." || exit 1
-
 
 RT_DIR="$PWD/venv"
 RT_PY="$RT_DIR/bin/python"
 
-
-if [[ ! -x "$RT_PY" ]]
-then
-  >&2 python3 -m venv -- "$RT_DIR"
-  >&2 "$RT_PY" -m pip install --upgrade --requirement requirements.txt
+if [[ ! -x "$RT_PY" ]]; then
+  python3 >&2 -m venv -- "$RT_DIR"
+  "$RT_PY" >&2 -m pip install --require-virtualenv --upgrade --requirement requirements.txt
 fi
 
-
-exec "$RT_PY" status-line.py "$@"
+exec -- "$RT_PY" status-line.py "$@"
