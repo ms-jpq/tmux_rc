@@ -13,7 +13,7 @@ from operator import pow
 from os import environ
 from pathlib import Path
 from platform import system
-from subprocess import DEVNULL, TimeoutExpired, run
+from subprocess import DEVNULL, CalledProcessError, TimeoutExpired, check_call
 from sys import stdout
 from tempfile import NamedTemporaryFile, gettempdir
 from time import monotonic, sleep, time
@@ -84,14 +84,15 @@ def _human_readable_size(size: float, precision: int = 3) -> str:
 def _ssh(timeout: float) -> float | None:
     if client := environ.get("SSH_CLIENT"):
         ip, *_ = client.split()
+        t = str(max(round(timeout), 1))
         now = monotonic()
         try:
-            run(
-                ("ping", "-n", "-c", "1", "-w", str(timeout), "-q", ip),
+            check_call(
+                ("ping", "-n", "-c", "1", "-w", t, "-q", "--", ip),
                 stdout=DEVNULL,
-                timeout=timeout + 1,
+                timeout=timeout,
             )
-        except TimeoutExpired:
+        except (CalledProcessError, TimeoutExpired):
             return inf
         else:
             return monotonic() - now
