@@ -8,7 +8,7 @@ from itertools import chain, count, repeat
 from json import dumps, loads
 from json.decoder import JSONDecodeError
 from locale import str as format_float
-from math import inf
+from math import inf, isfinite
 from operator import pow
 from os import environ
 from pathlib import Path
@@ -205,7 +205,7 @@ def _stat_lines(
     net_sent, net_recv = f"{hr_ns}B".rjust(5), f"{hr_nr}B".rjust(5)
 
     if ssh:
-        ping = format(ssh * 1000, ".1f")
+        ping = format(ssh * 1000, ".1f") if isfinite(ssh) else "INF_"
         yield f"SSH ~ {ping}ms"
 
     yield f"[⇡ {net_sent}, ⇣ {net_recv}]"
