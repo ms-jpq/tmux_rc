@@ -206,7 +206,7 @@ def _stat_lines(
 
     if ssh:
         ping = format(ssh * 1000, ".1f")
-        yield f"SSH > {ping} ms"
+        yield f"SSH ~ {ping} ms"
 
     yield f"[⇡ {net_sent}, ⇣ {net_recv}]"
     yield f"[r {disk_read}, w {disk_write}]"
