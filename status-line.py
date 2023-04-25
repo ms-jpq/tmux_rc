@@ -206,8 +206,12 @@ def _stat_lines(
     net_sent, net_recv = f"{hr_ns}B".rjust(5), f"{hr_nr}B".rjust(5)
 
     if ssh:
-        ping = format(ssh * 1000, ".1f") if isfinite(ssh) else "INF_"
-        yield f"SSH ~ {ping}ms"
+        ping = (
+            "~ " + format(ssh * 1000, ".1f")
+            if isfinite(ssh)
+            else "> " + format(interval * 1000, ".0f")
+        )
+        yield f"SSH {ping}ms"
 
     yield f"[⇡ {net_sent}, ⇣ {net_recv}]"
     yield f"[r {disk_read}, w {disk_write}]"
