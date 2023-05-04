@@ -8,12 +8,10 @@ if ! [[ -v SSH_CLIENT ]]; then
   exit
 fi
 
-MD5="$(md5sum --binary <<<"$TMUX")"
-MD5="${MD5% *}"
-
 DIR='/tmp/tmux-status-line'
-IP="${SSH_CLIENT% *}"
-NAME="$DIR/$MD5"
+IP="${SSH_CLIENT%% *}"
+TMUX="${TMUX%%,*}"
+NAME="$DIR/${TMUX//\//|}"
 
 mkdir --parents -- "$DIR"
 printf -- '%s' "$IP" >"$NAME.ip2"

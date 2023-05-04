@@ -2,15 +2,14 @@
 
 from argparse import ArgumentParser, Namespace
 from dataclasses import asdict, dataclass
-from functools import partial
-from hashlib import md5
+from functools import cache, partial
 from itertools import chain, count, repeat
 from json import dumps, loads
 from json.decoder import JSONDecodeError
 from locale import str as format_float
 from math import inf, isfinite
 from operator import pow
-from os import environ
+from os import environ, sep
 from pathlib import Path
 from platform import system
 from subprocess import DEVNULL, CalledProcessError, TimeoutExpired, check_call
@@ -56,9 +55,11 @@ class _Stats:
     net_recv: float
 
 
-_SNAPSHOT = (
-    Path(gettempdir()) / "tmux-status-line" / md5(environ["TMUX"].encode()).hexdigest()
-).with_suffix(".json")
+@cache
+def _path() -> Path:
+    mux, _, _ = environ["TMUX"].partition(",")
+    p = Path(gettempdir()) / "tmux-status-line" / mux.replace(sep, "|")
+    return p.with_suffix(".json")
 
 
 def _dump(path: Path, thing: str) -> None:
@@ -83,7 +84,7 @@ def _human_readable_size(size: float, precision: int = 3) -> str:
 
 def _ip() -> str | None:
     try:
-        ip = _SNAPSHOT.with_suffix(".ip").read_text()
+        ip = _path().with_suffix(".ip").read_text()
     except FileNotFoundError:
         if client := environ.get("SSH_CLIENT"):
             ip, *_ = client.split()
@@ -114,11 +115,11 @@ def _ssh(timeout: float) -> float | None:
 
 def _load() -> _Snapshot | None:
     try:
-        raw = _SNAPSHOT.read_text()
+        raw = _path().read_text()
         json = loads(raw)
         snapshot = _Snapshot(**json)
     except (FileNotFoundError, JSONDecodeError):
-        _SNAPSHOT.unlink(missing_ok=True)
+        _path().unlink(missing_ok=True)
         return None
     else:
         return snapshot
@@ -147,7 +148,7 @@ def _states(interval: int) -> tuple[_Snapshot, _Snapshot, int | None]:
     s2 = _snap()
 
     json = dumps(asdict(s2), check_circular=False, ensure_ascii=False)
-    _dump(_SNAPSHOT, thing=json)
+    _dump(_path(), thing=json)
     return s1, s2, battery.percent if battery else None
 
 
