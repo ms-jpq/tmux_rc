@@ -58,7 +58,7 @@ class _Stats:
 
 _SNAPSHOT = (
     Path(gettempdir()) / "tmux-status-line" / md5(environ["TMUX"].encode()).hexdigest()
-)
+).with_suffix(".json")
 
 
 def _dump(path: Path, thing: str) -> None:
@@ -81,9 +81,21 @@ def _human_readable_size(size: float, precision: int = 3) -> str:
         raise ValueError(f"unit over flow: {size}")
 
 
+def _ip() -> str | None:
+    try:
+        ip = _SNAPSHOT.with_suffix(".ip").read_text()
+    except FileNotFoundError:
+        if client := environ.get("SSH_CLIENT"):
+            ip, *_ = client.split()
+            return ip
+        else:
+            return None
+    else:
+        return ip
+
+
 def _ssh(timeout: float) -> float | None:
-    if client := environ.get("SSH_CLIENT"):
-        ip, *_ = client.split()
+    if ip := _ip():
         t = str(max(round(timeout), 1))
         now = monotonic()
         try:
